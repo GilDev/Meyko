@@ -5,6 +5,7 @@ Meyko is an abandonned smart device from a French startup. It runs an ESP32, whi
 It’s like a Nabaztag, but less cool.
 
 ![Meyko](meyko.jpg)
+
 *Happy Meyko rocking his new software!*
 
 ## Usage
