@@ -1,0 +1,330 @@
+esphome:
+  name: meyko
+  friendly_name: Meyko
+  project:
+    name: "gildev.meyko"
+    version: "1.0"
+  on_boot:
+    then:
+      - script.execute:
+          id: blink_eyes
+          period_ms: 1000
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+  level: INFO
+
+# Enable Home Assistant API
+#api:
+
+ota:
+  on_begin:
+    then:
+      - output.turn_on: head_slow
+#  on_progress:
+#    then:
+#      - output.turn_on: head_slow
+
+wifi:
+***REMOVED******REMOVED***
+  # manual_ip:
+  #   static_ip: 192.168.6.112
+  #   gateway: 192.168.6.254
+  #   subnet: 255.255.255.0
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+
+  on_connect:
+    - script.stop: blink_eyes
+    - switch.turn_on: eyes_normal
+
+captive_portal:
+  
+
+web_server:
+  port: 80
+  local: true
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: ESP IP Address
+    ssid:
+      name: ESP Connected SSID
+    bssid:
+      name: ESP Connected BSSID
+    mac_address:
+      name: ESP Mac Wifi Address
+    scan_results:
+      name: ESP Latest Scan Results
+    dns_address:
+      name: ESP DNS Address
+
+spi:
+  clk_pin: 14
+  mosi_pin: 2
+  miso_pin: 12
+#  ss_pin: 25
+
+globals:
+  - id: previous_face
+    type: unsigned int
+
+# TODO: Unify this to get the type of face and delay as URL parameters
+button:
+  - platform: template
+    name: "Surprised temporarily"
+    id: "surprised_temporarily"
+    on_press:
+      then:
+        - script.execute:
+            id: temporary_face
+            face_string: "Surprised"
+            delay_seconds: 60
+
+  - platform: template
+    name: "Excited temporarily"
+    id: "excited_temporarily"
+    on_press:
+      then:
+        - script.execute:
+            id: temporary_face
+            face_string: "Excited"
+            delay_seconds: 60
+
+  - platform: template
+    name: "Suck"
+    id: "suck"
+    on_press:
+      then:
+        - script.execute:
+            id: sucker
+            number: 50 # 12 seconds like this
+            period_ms: 100
+
+script:
+  - id: temporary_face
+    mode: restart
+    parameters:
+      delay_seconds: int
+      face_string: string
+    then:
+      - lambda: |-
+          id(previous_face) = id(face).active_index().value();
+          auto call = id(face).make_call();
+          call.set_option(face_string);
+          call.perform();
+      - delay: !lambda return delay_seconds * 1000;
+      - lambda: |-
+          auto current_face = id(face).active_index().value();
+          if (current_face == id(face).index_of(face_string)) {
+            auto call = id(face).make_call();
+            call.set_index(id(previous_face));
+            call.perform();
+          }
+
+  - id: sucker
+    mode: restart
+    parameters:
+      number: int
+      period_ms: int
+    then:
+      - lambda: id(previous_face) = id(face).active_index().value();
+      - repeat:
+          count: !lambda return number;
+          then:
+            - select.set:
+                id: face
+                option: "Surprised"
+            - delay: !lambda return period_ms / 2;
+            - select.set:
+                id: face
+                option: "Surprised More"
+            - delay: !lambda return period_ms / 2;
+      - select.set_index:
+          id: face
+          index: !lambda return id(previous_face);
+
+  - id: blink_eyes
+    mode: restart
+    parameters:
+      period_ms: int
+    then:
+      - lambda: id(previous_face) = id(face).active_index().value();
+      - while:
+          condition:
+            lambda: return true;
+          then:
+            - switch.toggle: eyes_normal
+            - delay: !lambda return period_ms / 2;
+
+  - id: dancing
+    mode: restart
+    parameters:
+      delay_ms: int
+    then:
+      - lambda: id(previous_face) = id(face).active_index().value();
+      - while:
+          condition:
+            lambda: return true;
+          then:
+            - select.set:
+                id: face
+                option: "Surprised"
+            - delay: !lambda return delay_ms;
+            - select.set:
+                id: face
+                option: "Happy"
+            - delay: !lambda return delay_ms;
+            - select.set:
+                id: face
+                option: "Surprised More"
+            - delay: !lambda return delay_ms;
+            - select.set:
+                id: face
+                option: "Excited"
+            - delay: !lambda return delay_ms;
+      - select.set_index:
+          id: face
+          index: !lambda return id(previous_face);
+
+status_led:
+  pin:
+    number: 23
+    inverted: true
+
+output:
+  - platform: slow_pwm
+    id: head_slow
+    period: 1s
+    turn_on_action:
+      - switch.turn_on: head
+    turn_off_action:
+      - switch.turn_off: head
+
+# All these could be PWM, and make some of them with a fade animation
+switch:
+  - platform: gpio
+    id: "eyes_normal"
+    name: "Eyes Normal"
+    pin: 17
+  - platform: gpio
+    id: "eyes_happy"
+    name: "Eyes Happy"
+    pin: 16
+  - platform: gpio
+    id: "mouth_happy"
+    name: "Mouth Happy"
+    pin: 18
+  - platform: gpio
+    id: "mouth_sad"
+    name: "Mouth Sad"
+    pin: 19
+  - platform: gpio
+    id: "mouth_open"
+    name: "Mouth Open"
+    pin: 21
+  - platform: gpio
+    id: "head"
+    name: "Head"
+    pin: 4
+  - platform: template
+    name: "Dance"
+    id: "dance"
+    icon: "mdi:human-female-dance"
+    optimistic: true
+    turn_on_action:
+      - lambda: id(previous_face) = id(face).active_index().value();
+      - script.execute:
+          id: dancing
+          delay_ms: 3000
+    turn_off_action:
+      - script.stop:
+          id: dancing
+      - select.set_index:
+          id: face
+          index: !lambda return id(previous_face);
+
+binary_sensor:
+  - platform: gpio
+    name: "Hand Left"
+    pin:
+      number: 34
+      inverted: true
+    on_press:
+      then:
+        - select.previous: face
+  - platform: gpio
+    name: "Hand Right"
+    pin:
+      number: 35
+      inverted: true
+    on_press:
+      then:
+        - select.next: face
+
+select:
+  - platform: template
+    name: Face
+    id: face
+    icon: "mdi:emoticon"
+    optimistic: true
+    options:
+      - "Eyes Only"
+      - "Happy"
+      - "Excited"
+      - "Sad"
+      - "Surprised"
+      - "Surprised More"
+    on_value:
+      then:
+        - lambda: |-
+            if (x == "Happy") {
+              id(eyes_normal).turn_on();
+              id(mouth_happy).turn_on();
+
+              id(eyes_happy).turn_off();
+              id(mouth_sad).turn_off();
+              id(mouth_open).turn_off();
+            } else if (x == "Sad") {
+              id(eyes_normal).turn_on();
+              id(mouth_sad).turn_on();
+
+              id(eyes_happy).turn_off();
+              id(mouth_happy).turn_off();
+              id(mouth_open).turn_off();
+            } else if (x == "Surprised") {
+              id(eyes_normal).turn_on();
+              id(mouth_open).turn_on();
+
+              id(eyes_happy).turn_off();
+              id(mouth_happy).turn_off();
+              id(mouth_sad).turn_off();
+            } else if (x == "Surprised More") {
+              id(eyes_normal).turn_on();
+              id(mouth_happy).turn_on();
+              id(mouth_sad).turn_on();
+
+              id(eyes_happy).turn_off();
+              id(mouth_open).turn_off();
+            } else if (x == "Excited") {
+              id(eyes_happy).turn_on();
+              id(mouth_happy).turn_on();
+
+              id(eyes_normal).turn_off();
+              id(mouth_sad).turn_off();
+              id(mouth_open).turn_off();
+            } else if (x == "Eyes Only") {
+              id(eyes_normal).turn_on();
+
+              id(eyes_happy).turn_off();
+              id(mouth_happy).turn_off();
+              id(mouth_sad).turn_off();
+              id(mouth_open).turn_off();
+            }
