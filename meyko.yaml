@@ -32,7 +32,9 @@ ota:
 #      - output.turn_on: head_slow
 
 wifi:
-***REMOVED******REMOVED***
+  ssid: "SSID HERE"
+  password: "PASSWORD HERE"
+
   # manual_ip:
   #   static_ip: 192.168.6.112
   #   gateway: 192.168.6.254
