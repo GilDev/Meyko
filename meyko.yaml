@@ -70,8 +70,12 @@ text_sensor:
 
 spi:
   clk_pin: 14
-  mosi_pin: 2
-  miso_pin: 12
+  mosi_pin:
+    number: 2
+    ignore_strapping_warning: true
+  miso_pin:
+    number: 12
+    ignore_strapping_warning: true
 #  ss_pin: 25
 
 globals:
