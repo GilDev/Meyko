@@ -20,7 +20,7 @@ logger:
   level: INFO
 
 # Enable Home Assistant API
-#api:
+api:
 
 ota:
   - platform: esphome
