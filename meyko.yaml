@@ -107,12 +107,12 @@ button:
             delay_seconds: 60
 
   - platform: template
-    name: "Suck"
-    id: "suck"
+    name: "Talk"
+    id: "talk"
     on_press:
       then:
         - script.execute:
-            id: sucker
+            id: talker
             number: 50 # 12 seconds like this
             period_ms: 100
 
@@ -137,7 +137,7 @@ script:
             call.perform();
           }
 
-  - id: sucker
+  - id: talker
     mode: restart
     parameters:
       number: int
