@@ -76,7 +76,6 @@ text_sensor:
     dns_address:
       name: ESP DNS Address
 
-
 # ----- NFC (CR95HF) ----- #
 spi:
   clk_pin: 14
@@ -93,7 +92,6 @@ globals:
     type: unsigned int
 
 # ----- Device ----- #
-
 # TODO: Unify this to get the type of face and delay as URL parameters
 button:
   - platform: template
@@ -104,7 +102,7 @@ button:
         - script.execute:
             id: temporary_face
             face_string: "Surprised"
-            delay_seconds: 60
+            delay_seconds: 30
 
   - platform: template
     name: "Excited temporarily"
@@ -114,7 +112,7 @@ button:
         - script.execute:
             id: temporary_face
             face_string: "Excited"
-            delay_seconds: 60
+            delay_seconds: 30
 
   - platform: template
     name: "Talk"
