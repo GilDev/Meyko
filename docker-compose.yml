@@ -3,7 +3,7 @@ name: esphome-meyko
 services:
   esphome:
     container_name: esphome
-    image: ghcr.io/esphome/esphome:2024.10
+    image: ghcr.io/esphome/esphome:2025.11
     volumes:
       - .:/config
       - /etc/localtime:/etc/localtime:ro
