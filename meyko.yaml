@@ -75,6 +75,8 @@ text_sensor:
       name: ESP Latest Scan Results
     dns_address:
       name: ESP DNS Address
+  - platform: version
+    name: "ESPHome Version"
 
 # ----- NFC (CR95HF) ----- #
 spi:
